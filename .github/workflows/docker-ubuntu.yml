@@ -1,0 +1,63 @@
+name: Build and Push Docker Base Images
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'flip-azulzulu-openjdk-ubuntu24.04-jdk21/**'
+      - '.github/workflows/docker-ubuntu.yml'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'flip-azulzulu-openjdk-ubuntu24.04-jdk21/**'
+  workflow_dispatch:
+
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build Ubuntu image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./flip-azulzulu-openjdk-ubuntu24.04-jdk21
+          push: false
+          load: true
+          tags: ghcr.io/${{ github.repository }}/jdk-ubuntu:latest
+      
+      - name: Run Ubuntu image tests
+        run: |
+          cd flip-azulzulu-openjdk-ubuntu24.04-jdk21
+          docker run --rm ghcr.io/${{ github.repository }}/jdk-ubuntu:latest java -version
+          echo "Ubuntu base image test passed!"
+      
+      - name: Push Ubuntu image to GHCR
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./flip-azulzulu-openjdk-ubuntu24.04-jdk21
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/jdk-ubuntu:latest
+            ghcr.io/${{ github.repository }}/jdk-ubuntu:ubuntu24.04-jdk21
+            ghcr.io/${{ github.repository }}/jdk-ubuntu:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
