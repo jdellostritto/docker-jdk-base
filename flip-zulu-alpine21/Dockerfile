@@ -11,9 +11,9 @@ RUN adduser -u 1001 -G appgroup -h /usr/app -D appuser
 RUN chown -R appuser:appgroup /usr/app
 
 
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 # Install necessary packages for Azul Zulu and set up locales
 RUN apk add --no-cache \
@@ -23,6 +23,7 @@ RUN apk add --no-cache \
     musl-locales-lang \
     tzdata \
     zlib \
+    libc6-compat \
     # Add Azul's public key and repository
     && wget -P /etc/apk/keys/ https://cdn.azul.com/public_keys/alpine-signing@azul.com-5d5dc44c.rsa.pub \
     && echo "https://repos.azul.com/zulu/alpine" | tee -a /etc/apk/repositories \
